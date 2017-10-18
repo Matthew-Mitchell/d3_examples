@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path, /* This is CSS; Cascading Style Sheets */
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  stroke: #000;
+}
+
+circle.hidden {
+  fill: #ccc !important;
+}
+
+#Scatter1 {    
+  position:absolute;
+  top:10px;
+  left:10px;
+  width:700px;
+  height: 500px;
+  /*border: black; */
+
+  
+}
+
+.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+
+/*#lineChart {    
+  position:absolute;
+  top:10px;
+  left:410px;
+  height: 150px;
+}*/
+
+#Scatter2 {
+  position:absolute;
+  top:10px;
+  left:710px;
+  width: 700px;
+  height: 500px;
+}
+
+#Summary {
+  position:absolute;
+  top: 510px;
+  left:10px;
+  width: 250px;
+  height: 500px;
+  font: 18px sans-serif;
+}
+
+#Summary_Results {
+  position:absolute;
+  top: 510px;
+  left:265px;
+  width: 400px;
+  height: 500px;
+  font: 18px sans-serif;
+}
+
+#Bar {
+  position:absolute;
+  top: 510px;
+  left:710px;
+  width: 700px;
+  height: 500px;
+}
+
+.tooltip {
+  position: absolute;
+  width: 90px;
+  height: 25px;
+  border-radius: 5px;
+  border: 2px solid #73AD21;
+  padding: 1px; 
+  pointer-events: none;
+} 
+
+.bar {
+  fill: steelblue;
+}
+
+.bar:hover {
+  fill: brown;
+}
+
+</style>
+
+
+<body>
+  <div id="Scatter1"></div>
+  <div id="Scatter2"></div>
+  <div id="Summary"></div>
+  <div id="Summary_Results"></div>
+  <div id="Bar"></div>
+<!-- <div id="lineChart"></div> -->
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+//Javascript
+//Set a bunch of variables that we will call later
+var margin = {top: 20, right: 20, bottom: 30, left: 40}, //These are later called by marging.top margin.right etc.
+    width = 700 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var x2 = d3.scale.linear()
+    .range([width + margin.left + margin.right, width + width + margin.left + margin.right]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.category10();
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var xAxis2 = d3.svg.axis()
+    .scale(x2)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var summary = d3.select("#Summary").append("p");
+
+var Summary_Results = d3.select("#Summary_Results").append("p");
+  //   .attr("width", 700)
+  //   .attr("height", 500)
+  // .append("g")
+  //   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var svg1 = d3.select("#Scatter1").append("svg")
+    .attr("width", 700)
+    .attr("height", 500)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+
+var tooltip = d3.select("#Scatter1").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+//Test Making a second svg element to the right
+
+var svg2 = d3.select("#Scatter2").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", 500)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var svg3 = d3.select("#Bar").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", 500)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+//Load the data and do stuff; this is where most of the magic now happens
+d3.tsv("data.tsv", function(error, data) {
+  if (error) throw error;
+
+  data.forEach(function(d) {
+    d.sepalLength = +d.sepalLength;
+    d.sepalWidth = +d.sepalWidth;
+  });
+
+  x.domain(d3.extent(data, function(d) { return d.sepalWidth; })).nice();
+  y.domain(d3.extent(data, function(d) { return d.sepalLength; })).nice();
+
+
+// var brush = d3.svg.brush()
+//       .x(x)
+//       .y(y)
+//       .on("brushstart", brushstart)
+//       .on("brush", brushmove)
+//       .on("brushend", brushend);
+
+//Duplicate X Axis for 2nd Graph on the Right
+// svg2.append("g")
+//       .attr("class", "x axis2") //Can now later call the svg element using the class name and style with css etc.
+//       .attr("transform", "translate("+ width "," + height + ")")
+//       .call(xAxis2)
+//     .append("text")
+//       .attr("class", "label2")
+//       .attr("x", width)// + margin.left + margin.right)
+//       .attr("y", -6)
+//       .style("text-anchor", "end") //"text-anchor" is a standard svg attribute.
+//       .text("Sepal Width (cm)");
+
+//SEE https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute for SVG Attribute References
+//Calling svg that was set above
+  svg1.append("g")
+      .attr("class", "x axis") //Can now later call the svg element using the class name and style with css etc.
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end") //"text-anchor" is a standard svg attribute.
+      .text("Sepal Width (cm)");
+
+
+  svg2.append("g")
+      .attr("class", "x axis") //Can now later call the svg element using the class name and style with css etc.
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end") //"text-anchor" is a standard svg attribute.
+      .text("Sepal Width (cm)");
+
+
+  svg1.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Sepal Length (cm)");
+
+  svg2.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Sepal Length (cm)");
+
+  // create the d3-brush generator
+var brush = d3.svg.brush()
+  .x(x)
+  .y(y)
+  .on("brush", brushmove)
+  .on("brushend", brushend);
+  // .extent([[0, 0], [width, height]])
+
+
+// attach the brush to the chart
+const gBrush = svg1.append('g')
+  .attr('class', 'brush')
+  .call(brush);
+
+  svg1.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 4.5)
+      .attr("cx", function(d) { return x(d.sepalWidth); })
+      .attr("cy", function(d) { return y(d.sepalLength); })
+      .style("fill", function(d) { return color(d.species); })
+      .on("mouseover", function(d) {
+          tooltip.transition()
+               .duration(200)
+               .style("opacity", .85);
+          tooltip.html('Sepal Width:'+d.sepalWidth + '<br/>Sepal Length:'+d.sepalLength)
+               .style("left", (d3.event.pageX ) + "px")
+               .style("top", (d3.event.pageY + 5) + "px")
+               .style("background", 'white')
+               .style("stroke", 'black');
+      })
+      .on("mouseout", function(d) {
+          tooltip.transition()
+               .duration(500)
+               .style("opacity", 0);})
+      ;
+//***************************************A BRUSH!!!*************************************
+
+
+
+
+//***************************************************************************************
+
+
+//Attempting to Filter Graph By a Condition
+//****************************************************************************************
+//Group is a feature name in the  data hierarchy 
+// var datasetBarChart = [
+// { group: "All", category: "Oranges", measure: 63850.4963 }, ... ,
+// { group: "All", category: "Apples", measure: 78258.0845 }]
+// function datasetBarChosen(group) {
+//   var ds = [];
+//   for (x in datasetBarChart) {
+//      if(datasetBarChart[x].group==group){
+//       ds.push(datasetBarChart[x]);
+//      } 
+//     }
+//   return ds;
+// }
+
+// var firstDatasetBarChart = datasetBarChosen(group);
+
+//Then under svg2:
+              // .data(firstDatasetBarChart)
+//****************************************************************************************
+  svg2.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+    // .filter(function(d) { return d.species=='setosa'})
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", function(d) { return x(d.sepalWidth); })
+      .attr("cy", function(d) { return y(d.sepalLength); })
+      .style("fill", function(d) { return color(d.species); });
+      // .on("mouseover", function(d) {
+      //     tooltip.transition()
+      //          .duration(200)
+      //          .style("opacity", .85);
+      //     tooltip.html('Sepal Width:'+d.sepalWidth + '<br/>Sepal Length:'+d.sepalLength)
+      //          .style("left", (d3.event.pageX ) + "px")
+      //          .style("top", (d3.event.pageY + 5) + "px")
+      //          .style("background", 'white')
+      //          .style("stroke", 'black');})
+      // .on("mouseout", function(d) {
+      //     tooltip.transition()
+      //          .duration(500)
+      //          .style("opacity", 0);};
+
+//Set another variable for legend
+  var legend = svg1.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .on("click", button_mouse);
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+//Duplicate for Second Scatter Plot
+
+ var legend2 = svg2.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend2")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend2.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color)
+      .on("click", button_mouse);;
+
+  legend2.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+
+
+
+// svg1.call(brush);
+
+// var brushCell;
+
+  // Clear the previously-active brush, if any.
+  // function brushstart(p) {
+  //   if (brushCell !== this) {
+  //     d3.select(brushCell).call(brush.clear());
+  //     x.domain(domainByTrait[p.x]);
+  //     y.domain(domainByTrait[p.y]);
+  //     brushCell = this;
+  //   }
+  // }
+
+  // Highlight the selected circles.
+  function brushmove(p) {
+    var e = brush.extent();
+    svg1.selectAll("circle").classed("hidden", function(d) {
+      return e[0][0] > d.sepalWidth || d.sepalWidth > e[1][0]
+          || e[0][1] > d.sepalLength || d.sepalLength > e[1][1];
+    });
+    svg2.selectAll("circle").classed("hidden", function(d) {
+      return e[0][0] > d.sepalWidth || d.sepalWidth > e[1][0]
+          || e[0][1] > d.sepalLength || d.sepalLength > e[1][1];
+    });
+
+    update_summary();
+    update_bar();
+
+    // var hiddenItems = svg1.selectAll(".hidden")[0].length;
+
+    // bar.append("text")
+    //    .text("Number of Select Features:"+ hiddenItems);
+
+  }
+
+  // If the brush is empty, select all circles.
+  function brushend() {
+    if (brush.empty()) svg1.selectAll(".hidden").classed("hidden", false) && svg2.selectAll(".hidden").classed("hidden", false);
+  }
+
+//*******************************Get Mouse Position**************************************************
+// var coordinates = [0, 0];
+// coordinates = d3.mouse(this);
+// var mousex = coordinates[0];
+// var mousey = coordinates[1];
+//***************************************************************************************************
+//**********************************Summarize the Selection***********************************************
+var totItems = svg1.selectAll("circle")[0].length;
+var hiddenItems = svg1.selectAll(".hidden")[0].length;
+
+summary.append("p")
+               .attr('align', 'right')
+               .text("Number of Select Features:")
+        .append("p")
+                       .attr('align', 'right')
+                       .text("Number of Hidden Features:")
+        .append("p")
+                       .attr('align', 'right')
+                       .text("Total Data Points:")
+        .append("p")
+                       .attr('align', 'right')
+                       .text("Hidden Widths Sum:")
+        .append("p")
+                       .attr('align', 'right')
+                       .text("Average Width of Hidden:");
+// bar.append("p")
+//    .text("Number of Select Features:"+ selectedItems)
+
+function update_summary() {
+  var hiddenItems = svg1.selectAll(".hidden")[0].length;
+  var totItems = svg1.selectAll("circle")[0].length;
+  var selectedItems = totItems-hiddenItems
+  var hiddenWidths = svg1.selectAll(".hidden").data().map(function (i) { return i.sepalWidth;});
+  var hiddenWidthSum = (hiddenWidths.reduce(function(prev, next){return prev+next;})).toFixed(2)
+  var avgWidth = (hiddenWidthSum/hiddenItems).toFixed(2)
+
+  var totWidths = svg1.selectAll("circle").data().map(function (i) { return i.sepalWidth;});
+  var totWidthSum = (hiddenWidths.reduce(function(prev, next){return prev+next;})).toFixed(2)
+  var totavgWidth = (hiddenWidthSum/hiddenItems).toFixed(2)
+  // var hiddenWidths = [for (d in hiddenData) d.sepalWidth ];
+  // var sum = Math.sum(widths.widths);
+  var summary_results = [selectedItems,
+                          hiddenItems,
+                          totItems,
+                          hiddenWidthSum,
+                          avgWidth];
+
+  Summary_Results.selectAll("p") // target the text element(s) which has a title class defined
+        // .attr("x", (width + margin.left + margin.right)/2)
+        // .attr("y", 15)
+        // .attr("class","title")        
+        // .attr("text-anchor", "middle")
+        .remove()
+        .data(summary_results)
+        .enter()
+        .append("p")
+        .attr("align", "left")
+        .text(function(d) {return d;})
+        ;
+    }
+;
+
+
+//******************EX
+  // var legend = svg1.selectAll(".legend")
+  //     .data(color.domain())
+  //   .enter().append("g")
+  //     .attr("class", "legend")
+  //     .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+  //     .on("click", button_mouse);
+
+  // legend.append("rect")
+  //     .attr("x", width - 18)
+  //     .attr("width", 18)
+  //     .attr("height", 18)
+  //     .style("fill", color);
+
+  // legend.append("text")
+  //     .attr("x", width - 24)
+  //     .attr("y", 9)
+  //     .attr("dy", ".35em")
+  //     .style("text-anchor", "end")
+  //     .text(function(d) { return d; });
+
+//*********
+//*****************************************BUTTON Function*******************************************************
+function button_mouse(i) {
+
+// .attr("cx", function(d) { return x(d.sepalWidth); })
+// .attr("cy", function(d) { return y(d.sepalLength); })
+  
+
+  //Move Dots Up
+  svg2.selectAll(".dot")
+      .data(data)
+      .transition()
+      .duration(500)
+      .ease("elastic")
+      // .delay(2000) //2000 ms or 2 seconds
+      .delay(function(d, i) { return i * 10;})
+      // .attr("class", "dot")
+      // .attr("r", 3.5)
+      .attr("cy",  function(d) { return x(d.sepalWidth+2*(Math.random()-.5));})
+      .attr("cx",  yMap = function(d) { return y(d.sepalLength+2*(Math.random()-.5));})
+   }
+//Test Button
+// d3.select(".legend2")
+//   .on("click", button_mouse);
+
+// function dodge_mouse(i) {
+
+// // .attr("cx", function(d) { return x(d.sepalWidth); })
+// // .attr("cy", function(d) { return y(d.sepalLength); })
+  
+
+//   //Move Dots Up
+//   svg2.selectAll(".dot")
+//       .data(data)
+//       .transition()
+//       .duration(500)
+//       .ease("elastic")
+//       // .delay(2000) //2000 ms or 2 seconds
+//       .delay(function(d, i) { return i * 10;})
+//       .attr("class", "dot")
+//       .attr("r", 3.5)
+//       .attr("cy",  function(d) { if (Math.abs(x(d.sepalWidth)-mousex)<10) {return x(d.sepalWidth+2*(Math.random()-.5))}
+//                                 else {return x(d.sepalWidth)};})
+//       .attr("cx",  yMap = function(d) { if Math.abs(y(d.sepalLength-mousey))<10 {return y(d.sepalLength+2*(Math.random()-.5))}
+//                                         else {return y(d.sepalLength)};})
+//    }
+
+//**************************************************************************************************************
+
+
+//***************************************************Bostock's Bar Chart https://bl.ocks.org/mbostock/3885304******************************
+
+// var species_list = svg1.selectAll("circle").data().map(function (i) { return i.species;});
+
+// var counts = {};
+
+// for(var i = 0; i< species_list.length; i++) {
+//     var num = species_list[i];
+//     counts[num] = counts[num] ? counts[num]+1 : 1;};
+
+// var species = Object.keys(counts);
+
+//  svg3.append("g")
+//       .attr("class", "axis axis--x")
+//       .attr("transform", "translate(0," + height + ")")
+//       .call(xAxis);
+
+//   svg3.append("g")
+//       .attr("class", "axis axis--y")
+//       .call(yAxis)
+//     .append("text")
+//       .attr("transform", "rotate(-90)")
+//       .attr("y", 6)
+//       .attr("dy", "0.71em")
+//       .attr("text-anchor", "end")
+//       .text("Number Selected");
+
+//   svg3.selectAll(".bar")
+//       .enter().append("rect")
+//       .attr("class", "bar")
+//       .attr("x", function(species,i ) { return i*10; })
+//       .attr("y", function(counts, i) { return counts[i]; })
+//       .attr("width", 10)
+//       .attr("height", function(d) { return height - y(d.sepalLength); });
+//*****************************************************************************************************************
+//Updated Bar Chart [BETA]*****************************************************************************************
+//Variables: Count Number of Hidden Species/Selected Species..... ***********************************************************************
+// var hidden_types = svg1.selectAll(".hidden").data().map(function (i) { return i.species;});
+
+// var hidden_counts = {};
+
+// for(var i = 0; i< hidden_types.length; i++) {
+//     var num = hidden_types[i];
+//     hidden_counts[num] = hidden_counts[num] ? hidden_counts[num]+1 : 1;
+// }
+
+
+// var all_types = svg1.selectAll("circle").data().map(function (i) { return i.species;});
+
+// var all_counts = {};
+
+// for(var i = 0; i< all_types.length; i++) {
+//     var num = all_types[i];
+//     all_counts[num] = all_counts[num] ? all_counts[num]+1 : 1;
+// }
+
+// var selected_counts = {'setosa': 50 - hidden_counts['setosa'], 'versicolor':50-hidden_counts['versicolor'],
+//             'virginica': 50 - hidden_counts['virginica']};
+
+
+// var species_names = ["setosa", "versicolor", "virginica"];
+
+//Original Bar Chart: Start with all_counts. ***********************************************************************
+ svg3.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg3.append("g")
+      .attr("class", "axis axis--y")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text("Number Selected");
+
+function update_bar(){
+  var hidden_types = svg1.selectAll(".hidden").data().map(function (i) { return i.species;});
+
+  var hidden_counts = {};
+
+  for(var i = 0; i< hidden_types.length; i++) {
+      var num = hidden_types[i];
+      hidden_counts[num] = hidden_counts[num] ? hidden_counts[num]+1 : 1;
+  }
+
+
+  var all_types = svg1.selectAll("circle").data().map(function (i) { return i.species;});
+
+  var all_counts = {};
+
+  for(var i = 0; i< all_types.length; i++) {
+      var num = all_types[i];
+      all_counts[num] = all_counts[num] ? all_counts[num]+1 : 1;
+  }
+
+  var selected_counts = {'setosa': 50 - hidden_counts['setosa'], 'versicolor':50-hidden_counts['versicolor'],
+              'virginica': 50 - hidden_counts['virginica']};
+
+
+  var bar_data = [ {"name":"setosa", "count":selected_counts['setosa']},
+                   {"name":"versicolor","count":selected_counts['versicolor']}, 
+                   {"name":"virginica", "count":selected_counts['virginica']}];
+
+  svg3.selectAll(".bar")
+      .remove()
+      .data(bar_data)
+      .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d, i) { return i*150; })
+      .attr("y", function(d) { return height-(d['count']*5); })
+      .attr("width", 150)
+      .attr("height", function(d) { return d['count']*5; });
+}
+;
+
+//*****************************************************************************************************************
+
+});
+
+</script>
+<!-- </body>
+</html> -->
